@@ -1,4 +1,13 @@
-
+body{
+	position:fixed;
+	width: 100%;
+	top: -20px;
+	right :-40px;
+	bottom:-40px;
+	height: auto;
+	width: auto;
+	
+}
 ul {
     list-style-type: none;
     margin: 0;
