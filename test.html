@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    
+    <title>chat bot</title>
+    
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.2.620/styles/kendo.common-material.min.css" />
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.2.620/styles/kendo.material.min.css" />
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.2.620/styles/kendo.material.mobile.min.css" />
+    
+    <link rel="stylesheet" href="css/chatbot.css">
+
+</head>
+<body>
+
+<div id="chatbot">
+    
+        <div id="chat"></div>
+        
+        <script src="https://kendo.cdn.telerik.com/2018.2.620/js/jquery.min.js"></script>
+        <script src="https://kendo.cdn.telerik.com/2018.2.620/js/kendo.all.min.js"></script>
+        <script src="https://www.promisejs.org/polyfills/promise-6.1.0.js"></script>
+        <script src="https://cdn.rawgit.com/dialogflow/dialogflow-javascript-client/50e82e62/target/ApiAi.min.js"></script>
+   
+    <script>
+        $(document).ready(function () {
+            
+            var chat = $("#chat").kendoChat({
+                messages: {
+                        placeholder: "Input text here "
+                         },       
+                user: {
+                        id:"Neng",
+                        iconUrl: "pic/boy.png",
+                        name: "I am neng"
+                        },
+                post: function (args) {
+                    agent.postMessage(args.text);
+                    
+                }
+            }).data("kendoChat");
+
+            var agent = new DialogFlowAgent(chat);
+        });
+        
+    </script>
+
+    <script>
+        window.DialogFlowAgent = kendo.Class.extend({
+            init: function (chat) {
+                this.chat = chat;
+                this.userInfo = {
+                    id: "Robot Boy",
+                    iconUrl: "pic/robot.png",
+                    name: "Robot Boy"
+                };
+
+                this.agent = new ApiAi.ApiAiClient({ accessToken: "c3e94eda92c0407a93156fee82127375" });
+
+                this.postEvent("Welcome");
+
+                this._timestamp;
+            },
+
+            postEvent: function (event) {
+                this.agent
+                    .eventRequest(event)
+                    .then($.proxy(this.onResponse, this));
+            },
+
+            postMessage: function (text) {
+                this.agent
+                    .textRequest(text)
+                    .then($.proxy(this.onResponse, this));
+            },
+
+            onResponse: function (response) {
+                this._timestamp = response.timestamp;
+
+                if (response.result && response.result.fulfillment) {
+                    var fulfillment = response.result.fulfillment;
+                    var data = fulfillment.data;
+
+                    this.renderMessages(fulfillment.messages);
+
+                    if (data && data.null) {
+                        this.renderAttachments(data.null);
+
+                        this.renderSuggestedActions(data.null.suggestedActions);
+                    }
+                }
+            },
+
+            renderMessages: function (messages) {
+                var that = this;
+
+                $(messages).each(function (index, message) {
+                    switch (message.type) {
+                        case 0:
+                            that.chat.renderMessage({ type: "text", text: message.speech, timestamp: that._timestamp }, that.userInfo);
+                            break;
+                        case 2:
+                            that.renderSuggestedActions(message.replies.map(function (reply) { return { title: reply, value: reply }; }));
+                            break;
+                        default:
+                    }
+                });
+
+            },
+            
+            renderSuggestedActions: function (suggestedActions) {
+                this.chat.renderSuggestedActions($(suggestedActions).toArray());
+            }
+        });
+    </script>
+
+</div>
+
+
+</body>
+</html>
